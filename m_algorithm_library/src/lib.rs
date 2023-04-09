@@ -1,3 +1,4 @@
+mod algorithm;
 mod data_structure;
 pub mod tools;
 // #[cfg(test)]
