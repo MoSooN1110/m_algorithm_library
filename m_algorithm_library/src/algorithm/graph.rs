@@ -28,8 +28,37 @@ where
         self.add_edge(s, t, cost.clone());
         self.add_edge(t, s, cost);
     }
-    //debug
-    fn Debug(&self) {}
+    fn from_adjacency_matrix(adjacency_matrix: Vec<Vec<T>>) -> Self {
+        let n = adjacency_matrix.len();
+        let mut g = vec![vec![]; n];
+        for i in 0..n {
+            for j in 0..n {
+                if adjacency_matrix[i][j] != T::default() {
+                    g[i].push((j, adjacency_matrix[i][j].clone()));
+                }
+            }
+        }
+        Self { g }
+    }
+
+    fn out_adjacency_matrix(&self) -> Vec<Vec<T>> {
+        let n = self.g.len();
+        let mut adjacency_matrix = vec![vec![T::default(); n]; n];
+        for i in 0..n {
+            for &(j, cost) in &self.g[i] {
+                adjacency_matrix[i][j] = cost.clone();
+            }
+        }
+        adjacency_matrix
+    }
+
+    fn out_adjacency_list(&self) -> Vec<Vec<(usize, T)>> {
+        self.g.clone()
+    }
+
+    fn from_adjacency_list(adjacency_list: Vec<Vec<(usize, T)>>) -> Self {
+        Self { g: adjacency_list }
+    }
 }
 
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -105,6 +134,7 @@ mod tests {
 
     #[test]
     fn test_dijkstra() {
+        //https://atcoder.jp/contests/arc061/submissions/40505260
         let mut graph = vec![
             vec![(1, 7), (2, 9), (5, 14)],
             vec![(0, 7), (2, 10), (3, 15)],
