@@ -41,6 +41,16 @@ impl<M: Monoid> SegTree<M> {
         }
     }
 
+    pub fn add(&mut self, mut p: usize, x: M::T) {
+        assert!(p < self.n);
+        p += self.size / 2;
+        self.buf[p] = M::op(&self.buf[p], &x);
+        while p > 1 {
+            p >>= 1;
+            self.buf[p] = M::op(&self.buf[p * 2], &self.buf[p * 2 + 1]);
+        }
+    }
+
     pub fn from_vec(v: &[M::T]) -> Self {
         let n = v.len();
         let mut seg = Self::new(n);
@@ -77,6 +87,75 @@ impl<M: Monoid> SegTree<M> {
             r >>= 1;
         }
         M::op(&sml, &smr)
+    }
+
+    pub fn max_right<F>(&self, mut l: usize, f: F) -> usize
+    where
+        F: Fn(&M::T) -> bool,
+    {
+        assert!(l <= self.n);
+        let mut r = self.n;
+        let mut sm = M::id();
+
+        l += self.size / 2;
+        while {
+            while l % 2 == 0 {
+                l >>= 1;
+            }
+            if !f(&M::op(&sm, &self.buf[l])) {
+                while l < self.size / 2 {
+                    l = l * 2;
+                    let res = M::op(&sm, &self.buf[l]);
+                    if f(&res) {
+                        sm = res;
+                        l += 1;
+                    }
+                }
+                return l - self.size / 2;
+            }
+            sm = M::op(&sm, &self.buf[l]);
+            l += 1;
+            {
+                let l = l as isize;
+                (l & -1) != l
+            }
+        } {}
+        self.n
+    }
+
+    pub fn min_left<F>(&self, mut r: usize, f: F) -> usize
+    where
+        F: Fn(&M::T) -> bool,
+    {
+        assert!(r <= self.n);
+        let mut l = 0;
+        let mut sm = M::id();
+
+        r += self.size / 2;
+        while {
+            r -= 1;
+            while r > 1 && r % 2 == 1 {
+                r >>= 1;
+            }
+            if !f(&M::op(&self.buf[r], &sm)) {
+                while r < self.size / 2 {
+                    r = r * 2 + 1;
+                    let res = M::op(&self.buf[r], &sm);
+                    if f(&res) {
+                        sm = res;
+                        r -= 1;
+                    }
+                }
+                return r + 1 - self.size / 2;
+            }
+            sm = M::op(&self.buf[r], &sm);
+            // while
+            {
+                let r = r as isize;
+                (r & -r) != r
+            }
+        } {}
+        0
     }
 }
 
@@ -120,5 +199,15 @@ mod tests {
         assert_eq!(seg2.querry(0, 10), 59);
         assert_eq!(seg2.querry(1, 5), 14);
         assert_eq!(seg2.querry(3, 8), 30);
+    }
+    #[test]
+
+    fn test_segtree_bsearch() {
+        let data = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+        let seg3 = SegTree::<MONADD>::from_vec(&data);
+        assert_eq!(seg3.max_right(0, |&x| x < 15), 4);
+        assert_eq!(seg3.max_right(0, |&x| x <= 15), 5);
+        assert_eq!(seg3.min_left(10, |&x| x < 19), 9);
+        assert_eq!(seg3.min_left(10, |&x| x <= 19), 8);
     }
 }
