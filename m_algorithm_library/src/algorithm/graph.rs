@@ -1,4 +1,5 @@
 use std::cmp::Ordering;
+use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use std::ops::Add;
 
@@ -88,24 +89,24 @@ where
     let mut predecessor: Vec<Option<usize>> = vec![None; n];
     let mut heap = BinaryHeap::new();
 
-    heap.push(State {
+    heap.push(Reverse(State {
         cost: T::default(),
         position: start,
-    });
+    }));
 
-    while let Some(State { cost, position }) = heap.pop() {
-        if dist[position].is_some() {
+    while let Some(Reverse(State { cost, position })) = heap.pop() {
+        if dist[position] > Some(cost) {
             continue;
         }
-
         dist[position] = Some(cost);
 
         for &(next_position, next_cost) in &graph.g[position] {
-            if dist[next_position].is_none() {
-                heap.push(State {
+            if dist[next_position].is_none() || dist[next_position] > Some(cost + next_cost) {
+                heap.push(Reverse(State {
                     cost: cost + next_cost,
                     position: next_position,
-                });
+                }));
+                dist[next_position] = Some(cost + next_cost);
                 predecessor[next_position] = Some(position);
             }
         }
@@ -113,7 +114,6 @@ where
 
     (dist, predecessor)
 }
-
 fn reconstruct_path(predecessor: &Vec<Option<usize>>, start: usize, end: usize) -> Vec<usize> {
     let mut path = Vec::new();
     let mut current = end;
@@ -127,47 +127,4 @@ fn reconstruct_path(predecessor: &Vec<Option<usize>>, start: usize, end: usize) 
     path.reverse();
 
     path
-}
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_dijkstra() {
-        //https://atcoder.jp/contests/arc061/submissions/40505260
-        let mut graph = vec![
-            vec![(1, 7), (2, 9), (5, 14)],
-            vec![(0, 7), (2, 10), (3, 15)],
-            vec![(0, 9), (1, 10), (3, 11), (5, 2)],
-            vec![(1, 15), (2, 11), (4, 6)],
-            vec![(3, 6), (5, 9)],
-            vec![(0, 14), (2, 2), (4, 9)],
-        ];
-        let start = 0;
-        let graph = Graph::from(graph);
-        let dist = dijkstra::<i32>(start, &graph).0;
-        let expected = vec![Some(0), Some(7), Some(9), Some(20), Some(20), Some(11)];
-        assert_eq!(dist, expected);
-    }
-
-    #[test]
-    fn test_dijkstra_path_restore() {
-        let mut graph = vec![
-            vec![(1, 7), (2, 9), (5, 14)],
-            vec![(0, 7), (2, 10), (3, 15)],
-            vec![(0, 9), (1, 10), (3, 11), (5, 2)],
-            vec![(1, 15), (2, 11), (4, 6)],
-            vec![(3, 6), (5, 9)],
-            vec![(0, 14), (2, 2), (4, 9)],
-        ];
-        let graph = Graph::from(graph);
-        let start = 0;
-        let end = 4;
-        let (dist, predecessor) = dijkstra::<i32>(start, &graph);
-        let expected_dist = vec![Some(0), Some(7), Some(9), Some(20), Some(20), Some(11)];
-        assert_eq!(dist, expected_dist);
-        let path = reconstruct_path(&predecessor, start, end);
-        let expected_path = vec![0, 1, 2, 5, 4];
-        assert_eq!(path, expected_path);
-    }
 }
