@@ -128,3 +128,46 @@ fn reconstruct_path(predecessor: &Vec<Option<usize>>, start: usize, end: usize) 
 
     path
 }
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_dijkstra() {
+        //https://atcoder.jp/contests/arc061/submissions/40505260
+        let mut graph = vec![
+            vec![(1, 7), (2, 9), (5, 14)],
+            vec![(0, 7), (2, 10), (3, 15)],
+            vec![(0, 9), (1, 10), (3, 11), (5, 2)],
+            vec![(1, 15), (2, 11), (4, 6)],
+            vec![(3, 6), (5, 9)],
+            vec![(0, 14), (2, 2), (4, 9)],
+        ];
+        let start = 0;
+        let graph = Graph::from(graph);
+        let dist = dijkstra::<i32>(start, &graph).0;
+        let expected = vec![Some(0), Some(7), Some(9), Some(20), Some(20), Some(11)];
+        assert_eq!(dist, expected);
+    }
+
+    #[test]
+    fn test_dijkstra_path_restore() {
+        let mut graph = vec![
+            vec![(1, 7), (2, 9), (5, 14)],
+            vec![(0, 7), (2, 10), (3, 15)],
+            vec![(0, 9), (1, 10), (3, 11), (5, 2)],
+            vec![(1, 15), (2, 11), (4, 6)],
+            vec![(3, 6), (5, 9)],
+            vec![(0, 14), (2, 2), (4, 9)],
+        ];
+        let graph = Graph::from(graph);
+        let start = 0;
+        let end = 4;
+        let (dist, predecessor) = dijkstra::<i32>(start, &graph);
+        let expected_dist = vec![Some(0), Some(7), Some(9), Some(20), Some(20), Some(11)];
+        assert_eq!(dist, expected_dist);
+        let path = reconstruct_path(&predecessor, start, end);
+        let expected_path = vec![0, 1, 2, 5, 4];
+        assert_eq!(path, expected_path);
+    }
+}
