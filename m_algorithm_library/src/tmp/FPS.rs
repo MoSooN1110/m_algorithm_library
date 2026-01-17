@@ -1,4 +1,3 @@
-
 pub const FPSMOD: u32 = 998_244_353;
 pub const PRIMITIVE_ROOT: u32 = 3;
 const MOD2: u32 = FPSMOD * 2;
@@ -732,6 +731,34 @@ pub fn pow_series(a: &[Mint], k: i64, deg: usize) -> Fps {
     let mut r = shl(&r, sh);
     r.truncate(deg);
     r
+}
+
+fn poly_mul_trunc(a: &Fps, b: &Fps, deg: usize) -> Fps {
+    let mut c = convolution(a, b);
+    if c.len() > deg {
+        c.truncate(deg);
+    }
+    c
+}
+
+fn poly_pow_trunc(mut base: Fps, mut e: usize, deg: usize) -> Fps {
+    let mut res = vec![Mint::ZERO; 1];
+    res[0] = Mint::ONE; // 1
+
+    if base.len() > deg {
+        base.truncate(deg);
+    }
+
+    while e > 0 {
+        if (e & 1) == 1 {
+            res = poly_mul_trunc(&res, &base, deg);
+        }
+        e >>= 1;
+        if e > 0 {
+            base = poly_mul_trunc(&base, &base, deg);
+        }
+    }
+    res
 }
 
 // poly division / remainder (fast via reverse+inv; small via long division)
